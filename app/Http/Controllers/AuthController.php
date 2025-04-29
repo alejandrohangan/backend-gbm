@@ -9,32 +9,6 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    // Registro de usuario
-    public function register(Request $request)
-    {
-        // Validación de datos con validate() (más limpio y directo)
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',  // Aseguramos que la contraseña sea confirmada
-        ]);
-
-        // Crear al usuario con datos validados
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // Intentamos generar el token JWT
-        try {
-            $token = JWTAuth::fromUser($user);
-            return response()->json(['token' => $token], 201); // Código 201 para recurso creado
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'No se pudo generar el token'], 500);
-        }
-    }
-
     // Login de usuario
     public function login(Request $request)
     {
@@ -47,12 +21,51 @@ class AuthController extends Controller
         // Intentamos generar el token JWT para el usuario
         try {
             if ($token = JWTAuth::attempt($credentials)) {
-                return response()->json(['token' => $token], 200); // 200 OK
+                // Obtener el usuario autenticado
+                $user = JWTAuth::user();
+                // Devolver el token y los datos del usuario
+                return response()->json([
+                    'token' => $token,
+                    'user' => $user
+                ], 200); // 200 OK
             } else {
                 return response()->json(['error' => 'Credenciales incorrectas'], 401); // 401 Unauthorized
             }
         } catch (\Exception $e) {
             return response()->json(['error' => 'No se pudo crear el token'], 500); // 500 Internal Server Error
+        }
+    }
+    //funcion de logout cechar el frontend
+    public function logout()
+    {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json([
+                'success' => true,
+                'message' => 'Sesión cerrada correctamente',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo cerrar la sesión',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function me()
+    {
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+            return response()->json([
+                'user' => $user,
+                'success' => true,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 401);
         }
     }
 }

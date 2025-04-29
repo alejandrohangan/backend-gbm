@@ -18,4 +18,9 @@ Route::middleware('api')->group(function () {
     // Rutas personalizadas para tickets
     Route::put('/tickets/{id}/status', [TicketController::class, 'updateStatus']);
     Route::put('/tickets/{id}/close', [TicketController::class, 'closeTicket']);
+    Route::get('userTickets', [TicketController::class, 'getUserTickets']);
+
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::get('me', [AuthController::class, 'me']);
 });

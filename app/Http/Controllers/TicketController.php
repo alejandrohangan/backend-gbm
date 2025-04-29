@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class TicketController extends Controller
 {
@@ -108,6 +109,15 @@ class TicketController extends Controller
         ]);
     }
 
+    public function getUserTickets() {
+        $user = Auth::user();
+        $tickets = Ticket::with('agent:id,name') // solo seleccionamos el id y name del agente
+                        ->where('requester_id', $user->id)
+                        ->get();
+    
+        return response()->json($tickets, 200);
+    }
+    
     public function rules(): array
     {
         return [
