@@ -19,6 +19,8 @@ Route::middleware('api')->group(function () {
     Route::put('/tickets/{id}/status', [TicketController::class, 'updateStatus']);
     Route::put('/tickets/{id}/close', [TicketController::class, 'closeTicket']);
     Route::get('userTickets', [TicketController::class, 'getUserTickets']);
+    Route::get('openTickets', [TicketController::class, 'getOpenTickets']);
+
 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);

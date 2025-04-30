@@ -19,10 +19,20 @@ class TicketController extends Controller
             ->get();
         return response()->json($tickets);
     }
-
     /**
      * Store a newly created resource in storage.
      */
+
+    public function getOpenTickets()
+    {
+        $tickets = Ticket::with('priority', 'requester', 'agent', 'category', 'tags')
+            ->where('status', 'open')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($tickets);
+    }
+
     public function store(Request $request)
     {
         $request->validate($this->rules());
@@ -109,15 +119,16 @@ class TicketController extends Controller
         ]);
     }
 
-    public function getUserTickets() {
+    public function getUserTickets()
+    {
         $user = Auth::user();
         $tickets = Ticket::with('agent:id,name') // solo seleccionamos el id y name del agente
-                        ->where('requester_id', $user->id)
-                        ->get();
-    
+            ->where('requester_id', $user->id)
+            ->get();
+
         return response()->json($tickets, 200);
     }
-    
+
     public function rules(): array
     {
         return [
