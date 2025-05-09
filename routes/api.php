@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\PriorityController;
+use App\Http\Controllers\SentMessageController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
@@ -21,8 +23,10 @@ Route::middleware('api')->group(function () {
     Route::get('userTickets', [TicketController::class, 'getUserTickets']);
     Route::get('openTickets', [TicketController::class, 'getOpenTickets']);
 
-
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
+
+    Route::post('/send-message', [SentMessageController::class, 'sendMessage']);
+    Route::post('/send-notification', [NotificationSentController::class, 'sendNotificationConfirmation']);
 });
