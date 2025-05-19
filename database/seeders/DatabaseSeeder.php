@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Attachment;
+use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\TicketHistory;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -22,6 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TicketSeeder::class);
         Attachment::factory(5)->create();
         TicketHistory::factory(10)->create();
-        
+        Conversation::factory(1)->create();
+        Message::factory(1)->create();
     }
 }
