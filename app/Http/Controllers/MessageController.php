@@ -14,20 +14,45 @@ class MessageController extends Controller
 
     public function getConversations()
     {
-        $authUserId = Auth::id();
-
-        $conversations = Conversation::where('user_id1', $authUserId)
-            ->orWhere('user_id2', $authUserId)
-            ->with(['user1', 'user2'])
-            ->get();
-
-        return response()->json($conversations);
+        $users = User::where('id', '!=', Auth::id())->get();
+        return response()->json($users);
     }
 
-    public function store(Request $request, int $id) {
+    public function store(Request $request, int $id)
+    {
         $sender = Auth::user();
         $receiver = User::findOrfail($id);
+
+        // Buscar o crear una conversación entre estos usuarios
+        $conversation = Conversation::where(function ($query) use ($sender, $receiver) {
+            $query->where('user_id1', $sender->id)
+                ->where('user_id2', $receiver->id);
+        })->orWhere(function ($query) use ($sender, $receiver) {
+            $query->where('user_id1', $receiver->id)
+                ->where('user_id2', $sender->id);
+        })->first();
+
+        // Si no existe una conversación, la creamos
+        if (!$conversation) {
+            $conversation = Conversation::create([
+                'user_id1' => $sender->id,
+                'user_id2' => $receiver->id
+            ]);
+        }
+
+        // Guardar el mensaje en la base de datos
+        Message::create([
+            'sender_id' => $sender->id,
+            'receiver_id' => $receiver->id,
+            'conversation_id' => $conversation->id,
+            'message' => $request->message
+        ]);
+
+        // Transmitir el mensaje por broadcast
         $message = new MessageSent($sender, $receiver, $request->message);
+        broadcast($message);
+
+        return response()->json(['status' => 'Message sent successfully']);
     }
 
     public function getMessages(int $id)
@@ -38,12 +63,14 @@ class MessageController extends Controller
 
         $messages = Message::query()
             ->where(function ($query) use ($authUserId, $otherUserId) {
-                $query->where('sender_id', $authUserId)
-                    ->where('recipient_id', $otherUserId);
-            })
-            ->orWhere(function ($query) use ($authUserId, $otherUserId) {
-                $query->where('sender_id', $otherUserId)
-                    ->where('recipient_id', $authUserId);
+                $query->where(function ($q) use ($authUserId, $otherUserId) {
+                    $q->where('sender_id', $authUserId)
+                        ->where('receiver_id', $otherUserId);
+                })
+                    ->orWhere(function ($q) use ($authUserId, $otherUserId) {
+                        $q->where('sender_id', $otherUserId)
+                            ->where('receiver_id', $authUserId);
+                    });
             })
             ->orderBy('created_at')
             ->get();
