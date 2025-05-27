@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\PriorityController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
@@ -32,4 +33,7 @@ Route::middleware('api')->group(function () {
     Route::post('/send-message/{id}', [MessageController::class, 'store']);
     Route::get('/get-messages/{id}', [MessageController::class, 'getMessages']);
     Route::get('/get-users', [MessageController::class, 'getConversations']);
+
+    Route::get('/roles', [RoleController::class, 'index']);
+
 });
