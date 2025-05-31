@@ -37,8 +37,17 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function configure()
+    {
+        return $this->afterCreating(function ($user) {
+            $roles = ['admin', 'agent', 'requester'];
+            $randomRole = $roles[array_rand($roles)];
+            $user->assignRole($randomRole);
+        });
     }
 }

@@ -35,5 +35,11 @@ Route::middleware('api')->group(function () {
     Route::get('/get-users', [MessageController::class, 'getConversations']);
 
     Route::get('/roles', [RoleController::class, 'index']);
+    Route::get('/user-roles/{id}', [RoleController::class, 'getUsersForRole']);
+    Route::get('/get-role/{id}', [RoleController::class, 'show']);
+    Route::get('get-permissions', [RoleController::class, 'getAllPermissions']);
+    Route::post('/roles', [RoleController::class, 'create']);
+    Route::delete('/roles/{id}', [RoleController::class, 'delete']);
+    Route::put('/roles/{id}', [RoleController::class, 'update']);
 
 });
