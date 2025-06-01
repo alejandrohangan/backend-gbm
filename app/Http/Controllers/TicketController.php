@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Priority;
+use App\Models\Tag;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -45,17 +48,22 @@ class TicketController extends Controller
         return response()->json($ticket, 201);
     }
 
+    public function getReferenceData()
+    {
+        return response()->json([
+            'categories' => Category::select('id', 'name')->orderBy('name')->get(),
+            'priorities' => Priority::select('id', 'name')->orderBy('name')->get(),
+            'tags' => Tag::select('id', 'name')->orderBy('name')->get()
+        ]);
+    }
+
     /**
      * Display the specified resource.
      */
     public function show($id)
     {
         $ticket = Ticket::with('tags', 'priority', 'category', 'requester', 'agent')
-            ->find($id);
-
-        if (!$ticket) {
-            return response()->json(['error' => 'Ticket no encontrado'], 404);
-        }
+            ->findOrFail($id);
 
         return response()->json($ticket);
     }

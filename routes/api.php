@@ -23,6 +23,7 @@ Route::middleware('api')->group(function () {
     Route::put('/tickets/{id}/close', [TicketController::class, 'closeTicket']);
     Route::get('userTickets', [TicketController::class, 'getUserTickets']);
     Route::get('openTickets', [TicketController::class, 'getOpenTickets']);
+    Route::get('/tickets-referenceData', [TicketController::class, 'getReferenceData']);
 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);

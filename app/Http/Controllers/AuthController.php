@@ -23,6 +23,7 @@ class AuthController extends Controller
             if ($token = JWTAuth::attempt($credentials)) {
                 // Obtener el usuario autenticado
                 $user = JWTAuth::user();
+                $user->role = $user->getRoleNames()->first();
                 // Devolver el token y los datos del usuario
                 return response()->json([
                     'token' => $token,
