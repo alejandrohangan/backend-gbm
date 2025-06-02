@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MessageController;
@@ -24,11 +25,11 @@ Route::middleware('api')->group(function () {
     Route::get('userTickets', [TicketController::class, 'getUserTickets']);
     Route::get('openTickets', [TicketController::class, 'getOpenTickets']);
     Route::get('/tickets-referenceData', [TicketController::class, 'getReferenceData']);
-
+    Route::post('/tickets', [TicketController::class, 'create']);
+    Route::get('attachments/{id}/download', [AttachmentController::class, 'download']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
-
     Route::post('/send-notification', [NotificationSentController::class, 'sendNotificationConfirmation']);
 
     Route::post('/send-message/{id}', [MessageController::class, 'store']);

@@ -17,11 +17,11 @@ return new class extends Migration
             $table->text('description');
             $table->enum('status',['open','in_progress','closed','on_hold','cancelled']);
             $table->dateTime('started_at');
-            $table->dateTime('closed_at');
+            $table->dateTime('closed_at')->nullable();
             $table->foreignId('priority_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
             $table->foreignId('requester_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('agent_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('agent_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

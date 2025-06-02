@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AttachmentController extends Controller
 {
@@ -12,7 +13,7 @@ class AttachmentController extends Controller
      */
     public function index()
     {
-        $attachment = Attachment::with('ticket','uploaded_by');
+        $attachment = Attachment::with('ticket', 'uploaded_by');
         return response()->json($attachment);
     }
 
@@ -40,6 +41,27 @@ class AttachmentController extends Controller
         return response()->json($attachment);
     }
 
+    public function download($id)
+    {
+        $attachment = Attachment::find($id);
+
+        if (!$attachment) {
+            return response()->json(['mensaje' => 'Attachment no encontrado'], 404);
+        }
+
+        // Path completo: storage/app/public/ + filepath
+        $fullPath = storage_path('app/public/' . $attachment->file_path);
+
+        if (!file_exists($fullPath)) {
+            return response()->json(['mensaje' => 'Archivo no encontrado en el servidor'], 404);
+        }
+
+        // Obtener el nombre original del archivo
+        $fileName = basename($attachment->file_path);
+
+        return response()->download($fullPath, $fileName);
+    }
+
     /**
      * Update the specified resource in storage.
      */
@@ -56,7 +78,7 @@ class AttachmentController extends Controller
     public function destroy($id)
     {
         Attachment::destroy($id);
-        return response()->json(['mensaje'=>'attachment eliminado!!']);
+        return response()->json(['mensaje' => 'attachment eliminado!!']);
     }
 
     public function rules(): array

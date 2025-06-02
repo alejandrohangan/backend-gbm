@@ -51,4 +51,8 @@ class Ticket extends Model
     {
         return $this->belongsToMany(Tag::class, 'tag_ticket');
     }
+
+    public function attachments(): HasMany {
+        return $this->hasMany(Attachment::class);
+    }
 }

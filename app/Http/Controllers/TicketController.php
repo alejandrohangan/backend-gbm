@@ -36,16 +36,46 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    public function store(Request $request)
+    public function create(Request $request)
     {
-        $request->validate($this->rules());
-        $ticket = Ticket::create($request->all());
+        $validated = $request->validate($this->rules());
 
-        if ($request->has('tags')) {
-            $ticket->tags()->attach($request->tags);
+        $ticket = Ticket::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'status' => 'open',
+            'priority_id' => $validated['priority_id'],
+            'category_id' => $validated['category_id'],
+            'requester_id' => Auth::id(),
+            'started_at' => now(),
+        ]);
+
+        // Adjuntar tags
+        if (!empty($validated['tags'])) {
+            $ticket->tags()->attach($validated['tags']);
         }
 
-        return response()->json($ticket, 201);
+        // Procesar archivos con mejor organización
+        if ($request->hasFile('attachments')) {
+            $ticketDirectory = 'tickets/attachments/' . $ticket->id;
+
+            foreach ($request->file('attachments') as $file) {
+                $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $filePath = $file->storeAs($ticketDirectory, $fileName, 'public');
+
+                $ticket->attachments()->create([
+                    'file_path' => $filePath,
+                    'ticket_id' => $ticket->id,
+                    'uploaded_by' => Auth::id(),
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket creado exitosamente',
+            'data' => $ticket->load(['priority', 'category', 'tags', 'attachments', 'requester'])
+        ], 201);
     }
 
     public function getReferenceData()
@@ -62,7 +92,7 @@ class TicketController extends Controller
      */
     public function show($id)
     {
-        $ticket = Ticket::with('tags', 'priority', 'category', 'requester', 'agent')
+        $ticket = Ticket::with('tags', 'priority', 'category', 'requester', 'agent', 'attachments')
             ->findOrFail($id);
 
         return response()->json($ticket);
@@ -130,27 +160,24 @@ class TicketController extends Controller
     public function getUserTickets()
     {
         $user = Auth::user();
-        $tickets = Ticket::with('agent:id,name') // solo seleccionamos el id y name del agente
+        $tickets = Ticket::with('agent:id,name')
             ->where('requester_id', $user->id)
             ->get();
 
         return response()->json($tickets, 200);
     }
 
-    public function rules(): array
+    private function rules()
     {
         return [
-            'title' => ['required', 'string', 'min:10', 'max:255'],
-            'description' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'in:open,in_progress,closed,on_hold,cancelled'],
-            'priority_id' => ['required', 'exists:priorities,id'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'requester_id' => ['required', 'exists:users,id'],
-            'agent_id' => ['required', 'exists:users,id'],
-            'started_at' => ['required', 'date'],
-            'closed_at' => ['nullable', 'date', 'after_or_equal:started_at'],
-            'tags' => ['nullable', 'array'],
-            'tags.*' => ['exists:tags,id']
+            'title' => 'required|string|max:255',
+            'description' => 'required|string|min:10',
+            'priority_id' => 'required|exists:priorities,id',
+            'category_id' => 'required|exists:categories,id',
+            'tags' => 'required|array|min:1',
+            'tags.*' => 'exists:tags,id',
+            'attachments' => 'sometimes|array|max:5',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,zip,txt'
         ];
     }
 }
