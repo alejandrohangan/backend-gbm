@@ -37,6 +37,8 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    protected $appends = ['role'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -88,5 +90,10 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    public function getRoleAttribute()
+    {
+        return $this->getRoleNames()->first();
     }
 }

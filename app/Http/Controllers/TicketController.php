@@ -177,7 +177,7 @@ class TicketController extends Controller
             'tags' => 'required|array|min:1',
             'tags.*' => 'exists:tags,id',
             'attachments' => 'sometimes|array|max:5',
-            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,gif,zip,txt'
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,zip,txt'
         ];
     }
 }

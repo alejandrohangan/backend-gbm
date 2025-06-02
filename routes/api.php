@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\PriorityController;
@@ -27,6 +28,7 @@ Route::middleware('api')->group(function () {
     Route::get('/tickets-referenceData', [TicketController::class, 'getReferenceData']);
     Route::post('/tickets', [TicketController::class, 'create']);
     Route::get('attachments/{id}/download', [AttachmentController::class, 'download']);
+
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
@@ -43,5 +45,7 @@ Route::middleware('api')->group(function () {
     Route::post('/roles', [RoleController::class, 'create']);
     Route::delete('/roles/{id}', [RoleController::class, 'delete']);
     Route::put('/roles/{id}', [RoleController::class, 'update']);
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
 });

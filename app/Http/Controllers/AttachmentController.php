@@ -49,14 +49,12 @@ class AttachmentController extends Controller
             return response()->json(['mensaje' => 'Attachment no encontrado'], 404);
         }
 
-        // Path completo: storage/app/public/ + filepath
         $fullPath = storage_path('app/public/' . $attachment->file_path);
 
         if (!file_exists($fullPath)) {
             return response()->json(['mensaje' => 'Archivo no encontrado en el servidor'], 404);
         }
 
-        // Obtener el nombre original del archivo
         $fileName = basename($attachment->file_path);
 
         return response()->download($fullPath, $fileName);
