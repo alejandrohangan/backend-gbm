@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Ticket;
-use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -14,45 +13,61 @@ class DashboardController extends Controller
         // Cards de estadísticas
         $stats = [
             'openTickets' => Ticket::where('status', 'open')->count(),
-            'resolvedTickets' => Ticket::where('status', 'closed')->count(),
-            'highPriorityTickets' => Ticket::where('priority', 'high')->count(),
-            'activeAgents' => User::where('role', 'agent')->where('is_active', true)->count(),
+            'closedTickets' => Ticket::where('status', 'closed')->count(),
+            'highPriorityTickets' => Ticket::whereHas('priority', function ($q) {
+                $q->where('name', 'Alta');
+            })->count(),
             'inProgressTickets' => Ticket::where('status', 'in_progress')->count(),
         ];
 
-        // Datos para gráfico de tendencias (últimos 7 días)
-        $ticketTrends = Ticket::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('COUNT(*) as created'),
-            DB::raw('SUM(CASE WHEN status = "closed" THEN 1 ELSE 0 END) as resolved')
-        )
-            ->where('created_at', '>=', now()->subDays(7))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-
         // Distribución de prioridades
-        $priorityDistribution = Ticket::select('priority', DB::raw('COUNT(*) as count'))
-            ->groupBy('priority')
+        $priorityDistribution = DB::table('priorities')
+            ->leftJoin('tickets', 'priorities.id', '=', 'tickets.priority_id')
+            ->select('priorities.name as priority', DB::raw('COUNT(tickets.id) as count'))
+            ->groupBy('priorities.id', 'priorities.name')
+            ->orderBy('count', 'desc')
+            ->limit(4)
             ->get()
             ->map(function ($item) {
                 return [
                     'priority' => $item->priority,
-                    'count' => $item->count,
-                    'percentage' => 0 // Se calculará en el frontend
+                    'count' => (int) $item->count
                 ];
             });
 
-        // Tickets recientes
-        $recentTickets = Ticket::with(['user', 'assignedUser'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        $categoryDistribution = Category::leftJoin('tickets', 'categories.id', '=', 'tickets.category_id')
+            ->select('categories.name as category', DB::raw('COUNT(tickets.id) as count'))
+            ->groupBy('categories.id', 'categories.name')
+            ->orderBy('count', 'desc')
+            ->limit(4)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->category,
+                    'count' => (int) $item->count
+                ];
+            });
+
+        $recentTickets = Ticket::with(['priority', 'agent'])
+            ->select('id', 'title', 'status', 'priority_id', 'agent_id', 'created_at')
+            ->latest('created_at')
+            ->take(5)
+            ->get()
+            ->map(function ($ticket) {
+                return [
+                    'id'       => $ticket->id,
+                    'title'    => $ticket->title,
+                    'status'   => $ticket->status,
+                    'priority' => $ticket->priority->name ?? 'Sin prioridad',
+                    'agent'    => $ticket->agent->name ?? 'Sin asignar',
+                    'created'  => $ticket->created_at->toDateTimeString(),
+                ];
+            });
 
         return response()->json([
             'stats' => $stats,
-            'ticketTrends' => $ticketTrends,
             'priorityDistribution' => $priorityDistribution,
+            'categoryDistribution' => $categoryDistribution,
             'recentTickets' => $recentTickets,
         ]);
     }
