@@ -6,6 +6,6 @@ Broadcast::channel('chat.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-Broadcast::channel('notifications.staff', function($user)  {
-    return in_array($user->rol, ['admin', 'agent']);
+Broadcast::channel('online', function($user)  {
+    return $user;
 });
