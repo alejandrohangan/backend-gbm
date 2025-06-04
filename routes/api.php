@@ -27,6 +27,8 @@ Route::middleware('api')->group(function () {
     Route::get('openTickets', [TicketController::class, 'getOpenTickets']);
     Route::get('/tickets-referenceData', [TicketController::class, 'getReferenceData']);
     Route::post('/tickets', [TicketController::class, 'create']);
+    Route::put('/assign-ticket/{id}', [TicketController::class, 'assignTicket']);
+   
     Route::get('attachments/{id}/download', [AttachmentController::class, 'download']);
 
     Route::post('login', [AuthController::class, 'login']);

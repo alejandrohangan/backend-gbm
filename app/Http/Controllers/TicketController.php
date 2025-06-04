@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TicketAssigned;
 use App\Models\Category;
 use App\Models\Priority;
 use App\Models\Tag;
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +35,12 @@ class TicketController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($tickets);
+        $agents = User::role(['agent', 'admin'])->get();
+
+        return response()->json([
+            'tickets' => $tickets,
+            'agents' => $agents
+        ]);
     }
 
     public function create(Request $request)
@@ -123,6 +130,28 @@ class TicketController extends Controller
         return response()->json(['mensaje' => 'Ticket eliminado'], 200);
     }
 
+    public function assignTicket(Request $request, int $ticketId)
+    {
+        $request->validate([
+            'agent_id' => 'nullable|exists:users,id'
+        ]);
+
+        $ticket = Ticket::findOrFail($ticketId);
+        $agentId = $request->agent_id ?? Auth::id();
+
+        $ticket->update([
+            'agent_id' => $agentId,
+            'status' => 'in_progress',
+        ]);
+
+        // Disparar evento para crear conversación
+        event(new TicketAssigned($ticket, $agentId));
+
+        return response()->json([
+            'message' => 'Ticket asignado correctamente',
+        ]);
+    }
+
     /**
      * Actualiza solo el estado de un ticket (para el Kanban)
      */
@@ -181,3 +210,5 @@ class TicketController extends Controller
         ];
     }
 }
+
+//SQLSTATE[23000]: Integrity constraint violation: 19 NOT NULL constraint failed: conversations.user_id1 (Connection: sqlite, SQL: insert into "conversations" ("user_id1", "user_id2", "updated_at", "created_at") values (?, 2, 2025-06-04 10:48:46, 2025-06-04 10:48:46))

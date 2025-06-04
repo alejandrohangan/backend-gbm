@@ -8,13 +8,26 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
 
     public function getConversations()
     {
-        $users = User::where('id', '!=', Auth::id())->get();
+        $authUserId = Auth::id();
+
+        $users = User::whereIn('id', function ($query) use ($authUserId) {
+            $query->select('user_id2')
+                ->from('conversations')
+                ->where('user_id1', $authUserId)
+                ->union(
+                    DB::table('conversations')
+                        ->select('user_id1')
+                        ->where('user_id2', $authUserId)
+                );
+        })->get();
+
         return response()->json($users);
     }
 
