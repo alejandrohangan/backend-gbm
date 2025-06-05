@@ -17,43 +17,48 @@ class MessageController extends Controller
     {
         $authUserId = Auth::id();
 
-        $users = User::whereIn('id', function ($query) use ($authUserId) {
-            $query->select('user_id2')
-                ->from('conversations')
-                ->where('user_id1', $authUserId)
-                ->union(
-                    DB::table('conversations')
-                        ->select('user_id1')
-                        ->where('user_id2', $authUserId)
-                );
-        })->get();
+        $conversations = DB::table('conversations')
+            ->leftJoin('users as u1', 'conversations.user_id1', '=', 'u1.id')
+            ->leftJoin('users as u2', 'conversations.user_id2', '=', 'u2.id')
+            ->select(
+                'conversations.*',
+                DB::raw('CASE 
+                WHEN conversations.user_id1 = ' . $authUserId . ' THEN u2.name 
+                ELSE u1.name 
+            END as other_user_name'),
+                DB::raw('CASE 
+                WHEN conversations.user_id1 = ' . $authUserId . ' THEN u2.id 
+                ELSE u1.id 
+            END as other_user_id')
+            )
+            ->where(function ($query) use ($authUserId) {
+                $query->where('user_id1', $authUserId)
+                    ->orWhere('user_id2', $authUserId);
+            })
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        return response()->json($users);
+        return response()->json($conversations);
     }
 
-    public function store(Request $request, int $id)
+    public function store(Request $request, int $conversationId)
     {
         $sender = Auth::user();
-        $receiver = User::findOrfail($id);
+        $authUserId = Auth::id();
 
-        // Buscar o crear una conversación entre estos usuarios
-        $conversation = Conversation::where(function ($query) use ($sender, $receiver) {
-            $query->where('user_id1', $sender->id)
-                ->where('user_id2', $receiver->id);
-        })->orWhere(function ($query) use ($sender, $receiver) {
-            $query->where('user_id1', $receiver->id)
-                ->where('user_id2', $sender->id);
-        })->first();
+        $conversation = Conversation::where('id', $conversationId)
+            ->where(function ($query) use ($authUserId) {
+                $query->where('user_id1', $authUserId)
+                    ->orWhere('user_id2', $authUserId);
+            })
+            ->firstOrFail();
 
-        // Si no existe una conversación, la creamos
-        if (!$conversation) {
-            $conversation = Conversation::create([
-                'user_id1' => $sender->id,
-                'user_id2' => $receiver->id
-            ]);
-        }
+        $receiverId = ($conversation->user_id1 == $authUserId)
+            ? $conversation->user_id2
+            : $conversation->user_id1;
 
-        // Guardar el mensaje en la base de datos
+        $receiver = User::findOrFail($receiverId);
+
         Message::create([
             'sender_id' => $sender->id,
             'receiver_id' => $receiver->id,
@@ -68,23 +73,24 @@ class MessageController extends Controller
         return response()->json(['status' => 'Message sent successfully']);
     }
 
-    public function getMessages(int $id)
+    public function getMessages(int $conversationId)
     {
-        $user = User::findOrfail($id);
         $authUserId = Auth::id();
-        $otherUserId = $user->id;
 
-        $messages = Message::query()
-            ->where(function ($query) use ($authUserId, $otherUserId) {
-                $query->where(function ($q) use ($authUserId, $otherUserId) {
-                    $q->where('sender_id', $authUserId)
-                        ->where('receiver_id', $otherUserId);
-                })
-                    ->orWhere(function ($q) use ($authUserId, $otherUserId) {
-                        $q->where('sender_id', $otherUserId)
-                            ->where('receiver_id', $authUserId);
-                    });
+        // Verificar que el usuario pertenece a esta conversación
+        $conversation = DB::table('conversations')
+            ->where('id', $conversationId)
+            ->where(function ($query) use ($authUserId) {
+                $query->where('user_id1', $authUserId)
+                    ->orWhere('user_id2', $authUserId);
             })
+            ->first();
+
+        if (!$conversation) {
+            return response()->json(['error' => 'Conversación no encontrada'], 404);
+        }
+
+        $messages = Message::where('conversation_id', $conversationId)
             ->orderBy('created_at')
             ->get();
 

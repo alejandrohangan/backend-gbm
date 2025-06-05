@@ -18,7 +18,8 @@ return new class extends Migration
             $table->text('new_value');
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('changed_by')->constrained('users')->cascadeOnDelete();
-            $table->timestamps('changed_date');
+            $table->timestamp('changed_date')->nullable();
+            $table->timestamps();
             $table->softDeletes();
         });
     }

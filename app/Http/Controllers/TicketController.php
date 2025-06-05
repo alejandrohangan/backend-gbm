@@ -210,5 +210,3 @@ class TicketController extends Controller
         ];
     }
 }
-
-//SQLSTATE[23000]: Integrity constraint violation: 19 NOT NULL constraint failed: conversations.user_id1 (Connection: sqlite, SQL: insert into "conversations" ("user_id1", "user_id2", "updated_at", "created_at") values (?, 2, 2025-06-04 10:48:46, 2025-06-04 10:48:46))

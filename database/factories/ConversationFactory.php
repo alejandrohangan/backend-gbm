@@ -19,6 +19,7 @@ class ConversationFactory extends Factory
         return [
             'user_id1' => 1,
             'user_id2' => 2,
+            'ticket_id' => 1
         ];
     }
 }

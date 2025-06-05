@@ -34,11 +34,10 @@ Route::middleware('api')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
-    Route::post('/send-notification', [NotificationSentController::class, 'sendNotificationConfirmation']);
-
-    Route::post('/send-message/{id}', [MessageController::class, 'store']);
+    
+    Route::post('/send-message/{conversationId}', [MessageController::class, 'store']);
     Route::get('/get-messages/{id}', [MessageController::class, 'getMessages']);
-    Route::get('/get-users', [MessageController::class, 'getConversations']);
+    Route::get('/get-conversations', [MessageController::class, 'getConversations']);
 
     Route::get('/roles', [RoleController::class, 'index']);
     Route::get('/user-roles/{id}', [RoleController::class, 'getUsersForRole']);
