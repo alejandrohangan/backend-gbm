@@ -46,6 +46,8 @@ Route::middleware('api')->group(function () {
     Route::post('/roles', [RoleController::class, 'create']);
     Route::delete('/roles/{id}', [RoleController::class, 'delete']);
     Route::put('/roles/{id}', [RoleController::class, 'update']);
+    Route::post('/roles/{roleId}/assign', [RoleController::class, 'assignRole']);
+    Route::post('/roles/{roleId}/revoke', [RoleController::class, 'revokeRole']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 

@@ -104,5 +104,79 @@ class RoleController extends Controller
         }
     }
 
-    private function rules() {}
+    public function assignRole(Request $request, int $roleId)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id'
+        ]);
+
+        try {
+            $role = Role::findOrFail($roleId);
+            $user = User::findOrFail($validated['user_id']);
+
+            // Verificar si el usuario ya tiene el rol
+            if ($user->hasRole($role->name)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User already has this role'
+                ], 400);
+            }
+
+            // Asignar el rol
+            $user->assignRole($role->name);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Role assigned successfully',
+                'data' => [
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'role_id' => $role->id,
+                    'role_name' => $role->name
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error assigning role: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function revokeRole(Request $request, int $roleId)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id'
+        ]);
+
+        try {
+            $role = Role::findOrFail($roleId);
+            $user = User::findOrFail($validated['user_id']);
+
+            if (!$user->hasRole($role->name)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User does not have this role'
+                ], 400);
+            }
+
+            $user->removeRole($role->name);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Role revoked successfully',
+                'data' => [
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'role_id' => $role->id,
+                    'role_name' => $role->name
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error revoking role: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
