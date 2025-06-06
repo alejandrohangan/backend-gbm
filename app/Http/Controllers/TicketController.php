@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
@@ -174,15 +175,37 @@ class TicketController extends Controller
      */
     public function closeTicket($id)
     {
-        $ticket = Ticket::findOrFail($id);
+        $ticket = Ticket::with(['attachments', 'conversation.messages'])->findOrFail($id);
 
-        $ticket->status = 'closed';
-        $ticket->closed_at = Carbon::now();
-        $ticket->save();
+        $ticket->attachments->each(function ($attachment) {
+            if (Storage::disk('public')->exists($attachment->file_path)) {
+                Storage::disk('public')->delete($attachment->file_path);
+            }
+        });
+
+        $ticketDirectory = 'tickets/attachments/' . $ticket->id;
+        if (Storage::disk('public')->exists($ticketDirectory)) {
+            $files = Storage::disk('public')->files($ticketDirectory);
+            if (empty($files)) {
+                Storage::disk('public')->deleteDirectory($ticketDirectory);
+            }
+        }
+
+        $ticket->attachments()->delete();
+
+        if ($ticket->conversation) {
+            $ticket->conversation->messages()->delete();
+            $ticket->conversation->delete();
+        }
+
+        $ticket->update([
+            'status' => 'closed',
+            'closed_at' => Carbon::now()
+        ]);
 
         return response()->json([
-            'mensaje' => 'Ticket cerrado correctamente',
-            'data' => $ticket
+            'mensaje' => 'Ticket cerrado correctamente, attachments eliminados y conversación eliminada',
+            'data' => $ticket->fresh()
         ]);
     }
 

@@ -12,6 +12,11 @@ class Conversation extends Model
 
     protected $fillable = ['user_id1', 'user_id2', 'last_message_id', 'ticket_id'];
 
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
     public function lastMessage(): BelongsTo {
         return $this->belongsTo(Message::class, 'last_message_id');
     }

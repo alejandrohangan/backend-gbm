@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -54,5 +55,9 @@ class Ticket extends Model
 
     public function attachments(): HasMany {
         return $this->hasMany(Attachment::class);
+    }
+
+    public function conversation(): HasOne {
+        return $this->hasOne(Conversation::class);
     }
 }
