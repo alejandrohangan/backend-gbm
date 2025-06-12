@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NotificationEvent;
 use App\Events\TicketAssigned;
 use App\Models\Category;
 use App\Models\Priority;
@@ -112,14 +113,32 @@ class TicketController extends Controller
     public function update(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
-        $request->validate($this->rules());
-        $ticket->update($request->all());
 
-        if ($request->has('tags')) {
-            $ticket->tags()->sync($request->tags);
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string|min:10',
+            'priority_id' => 'required|exists:priorities,id',
+            'category_id' => 'required|exists:categories,id',
+            'tags' => 'required|array',
+            'tags.*' => 'exists:tags,id'
+        ]);
+
+        $ticket->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'priority_id' => $validated['priority_id'],
+            'category_id' => $validated['category_id'],
+        ]);
+
+        if (array_key_exists('tags', $validated)) {
+            $ticket->tags()->sync($validated['tags'] ?? []);
         }
 
-        return response()->json($ticket);
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket actualizado exitosamente',
+            'data' => $ticket->load(['priority', 'category', 'tags', 'attachments', 'requester'])
+        ], 200);
     }
 
     /**
